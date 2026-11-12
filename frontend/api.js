@@ -48,6 +48,7 @@ const api = {
   directory: (q) => apiCall('GET', '/api/backoffice/directory' + (q ? ('?q=' + encodeURIComponent(q)) : '')),
   getArtist: (id) => apiCall('GET', '/api/backoffice/artists/' + id),
   updateArtist: (id, data) => apiCall('PUT', '/api/backoffice/artists/' + id, data),
+  deleteArtist: (id) => apiCall('DELETE', '/api/backoffice/artists/' + id),
 
   demoAccounts: () => apiCall('GET', '/api/auth/demo-accounts'),
 

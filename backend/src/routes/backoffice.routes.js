@@ -58,4 +58,11 @@ router.put('/artists/:id', async (req, res) => {
   res.json({ artist: artistRowToJson(updated) });
 });
 
+// Elimina una cuenta por completo (sus archivos se borran en cascada).
+router.delete('/artists/:id', async (req, res) => {
+  const result = await pool.query('DELETE FROM artists WHERE id = $1 RETURNING id', [req.params.id]);
+  if (!result.rows[0]) return res.status(404).json({ error: 'No encontrado' });
+  res.json({ ok: true });
+});
+
 module.exports = router;

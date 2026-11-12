@@ -1242,7 +1242,10 @@ label{font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transf
         <span class="pill gold" data-i18n="admin_mode">🛠 Modo administrador</span>
         <span style="font-size:12px; color:var(--text-dim)"><span data-i18n="admin_mode_desc_pre">Estás viendo y editando el perfil de</span> <b id="adminEditArtistId" style="color:var(--gold-light)">—</b> <span data-i18n="admin_mode_desc_post">como parte del equipo de CAS. Los cambios se guardan directamente en su cuenta.</span></span>
       </div>
-      <button type="button" class="btn btn-outline btn-sm" data-i18n="btn_back_directory" onclick="exitAdminArtistView()">← Volver al directorio</button>
+      <div style="display:flex; gap:8px; flex-wrap:wrap">
+        <button type="button" class="btn btn-outline btn-sm" data-i18n="btn_eliminar_cuenta" style="border-color:var(--bad); color:var(--bad)" onclick="deleteArtistFromAdmin()">🗑 Eliminar cuenta</button>
+        <button type="button" class="btn btn-outline btn-sm" data-i18n="btn_back_directory" onclick="exitAdminArtistView()">← Volver al directorio</button>
+      </div>
     </div>
     <span class="eyebrow" data-i18n="mi_perfil_eyebrow">Mi perfil</span>
     <h2 class="h-title" data-i18n="mi_perfil_title">Así te ve CAS</h2>
@@ -3836,7 +3839,7 @@ const I18N = {
     fast_track_ok: '✓ ¡Registro completo!', fast_track_sub: 'Te enviamos un correo de confirmación de tu registro. Ya puedes buscar artistas — nuestro equipo termina de verificar tu cuenta en segundo plano.',
     btn_buscar_artistas: 'Buscar artistas →',
     admin_mode: '🛠 Modo administrador', admin_mode_desc_pre: 'Estás viendo y editando el perfil de', admin_mode_desc_post: 'como parte del equipo de CAS. Los cambios se guardan directamente en su cuenta.',
-    btn_back_directory: '← Volver al directorio', btn_back_clients: '← Volver a clientes', cargar_eyebrow: 'Mi información', cargar_title: 'Sube y actualiza tu perfil', cargar_sub: 'Completa tu información una vez y actualízala cuando quieras.',
+    btn_back_directory: '← Volver al directorio', btn_eliminar_cuenta: '🗑 Eliminar cuenta', confirm_eliminar_cuenta: 'Esto eliminará para siempre la cuenta de {nombre} ({casId}) y todos sus archivos. Esta acción no se puede deshacer. ¿Continuar?', btn_back_clients: '← Volver a clientes', cargar_eyebrow: 'Mi información', cargar_title: 'Sube y actualiza tu perfil', cargar_sub: 'Completa tu información una vez y actualízala cuando quieras.',
     pct_complete_suffix: '% completo', saves_per_section: 'Se guarda por sección', nav_disponibilidad: 'Disponibilidad',
     cargar_identidad: 'Identidad', cargar_identidad_sub: 'Esto nunca lo ve un cliente — solo el equipo de CAS.',
     label_nombre_solo: 'Nombre', label_apellido: 'Apellido', label_ciudad: 'Ciudad',
@@ -4004,7 +4007,7 @@ const I18N = {
     fast_track_ok: '✓ Registration complete!', fast_track_sub: "We sent you a confirmation email for your registration. You can already search artists — our team finishes verifying your account in the background.",
     btn_buscar_artistas: 'Search artists →',
     admin_mode: '🛠 Admin mode', admin_mode_desc_pre: "You're viewing and editing the profile of", admin_mode_desc_post: 'as part of the CAS team. Changes are saved directly to their account.',
-    btn_back_directory: '← Back to directory', btn_back_clients: '← Back to clients', cargar_eyebrow: 'My information', cargar_title: 'Upload and update your profile', cargar_sub: 'Complete your information once and update it whenever you want.',
+    btn_back_directory: '← Back to directory', btn_eliminar_cuenta: '🗑 Delete account', confirm_eliminar_cuenta: 'This will permanently delete {nombre}\'s account ({casId}) and all their files. This cannot be undone. Continue?', btn_back_clients: '← Back to clients', cargar_eyebrow: 'My information', cargar_title: 'Upload and update your profile', cargar_sub: 'Complete your information once and update it whenever you want.',
     pct_complete_suffix: '% complete', saves_per_section: 'Saved per section', nav_disponibilidad: 'Availability',
     cargar_identidad: 'Identity', cargar_identidad_sub: 'A client never sees this — only the CAS team.',
     label_nombre_solo: 'First name', label_apellido: 'Last name', label_ciudad: 'City',
@@ -4358,6 +4361,24 @@ function openAdminArtistProfileReal(id){
 function exitAdminArtistView(){
   document.getElementById('adminEditArtistBanner').style.display = 'none';
   goToScreen('backoffice-directorio');
+}
+
+function deleteArtistFromAdmin(){
+  const account = window.__currentProfileAccount;
+  if(!account) return;
+  const dict = curDict();
+  if(!confirm(dict.confirm_eliminar_cuenta.replace('{nombre}', account.firstName + ' ' + (account.lastName || '')).replace('{casId}', account.casId))) return;
+  api.deleteArtist(account.id).then(()=>{
+    document.getElementById('adminEditArtistBanner').style.display = 'none';
+    window.__currentProfileAccount = null;
+    window.__profileViewIsAdmin = false;
+    window.__filesContext = null;
+    renderBackofficeArtistQueue();
+    renderBackofficeArtistDirectory();
+    goToScreen('backoffice-directorio');
+  }).catch(err=>{
+    alert(err.message || 'No se pudo eliminar la cuenta.');
+  });
 }
 function exitAdminEdit(){
   document.getElementById('adminEditBanner').style.display = 'none';
