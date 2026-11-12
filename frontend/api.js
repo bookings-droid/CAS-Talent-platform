@@ -27,6 +27,7 @@ const api = {
   logout: () => apiCall('POST', '/api/auth/logout'),
   me: () => apiCall('GET', '/api/auth/me'),
   updateMe: (data) => apiCall('PUT', '/api/me', data),
+  deleteMe: () => apiCall('DELETE', '/api/me'),
 
   async uploadFile(category, file) {
     const form = new FormData();

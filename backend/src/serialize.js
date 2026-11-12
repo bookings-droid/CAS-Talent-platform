@@ -41,7 +41,8 @@ function artistRowToJson(row) {
     profileCompletion: row.profile_completion,
     verified: row.verified,
     rejected: row.rejected,
-    isDemo: row.is_demo
+    isDemo: row.is_demo,
+    updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at
   };
 }
 

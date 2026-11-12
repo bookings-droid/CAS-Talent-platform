@@ -1,6 +1,6 @@
 const express = require('express');
 const { pool } = require('../db');
-const { requireAuth } = require('../auth');
+const { requireAuth, clearSessionCookie } = require('../auth');
 const { artistRowToJson } = require('../serialize');
 
 const router = express.Router();
@@ -54,6 +54,14 @@ router.get('/', requireAuth, async (req, res) => {
 router.put('/', requireAuth, async (req, res) => {
   const updated = await updateArtist(req.artistId, req.body || {});
   res.json({ artist: artistRowToJson(updated) });
+});
+
+// Autoeliminación de cuenta (botón "Eliminar mi cuenta" en Cargar/Actualizar). Sus
+// archivos se borran en cascada, igual que la eliminación desde el Backoffice.
+router.delete('/', requireAuth, async (req, res) => {
+  await pool.query('DELETE FROM artists WHERE id = $1', [req.artistId]);
+  clearSessionCookie(res);
+  res.json({ ok: true });
 });
 
 module.exports = { router, updateArtist };
