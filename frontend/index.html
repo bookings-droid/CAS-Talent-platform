@@ -1717,10 +1717,11 @@ label{font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transf
       <div id="globalSearchResults" style="display:none; margin-bottom:20px"></div>
 
       <div class="grid cols-4">
-        <div class="card metric"><b>312</b><span>Inscritos migrados</span></div>
-        <div class="card metric"><b>128</b><span>Perfiles al 70%+</span></div>
-        <div class="card metric" style="color:var(--warn)"><b>24</b><span>Documentos por vencer</span></div>
-        <div class="card metric"><b>3</b><span>Convocatorias activas</span></div>
+        <div class="card metric"><b id="statTotalArtists">—</b><span>Artistas inscritos</span></div>
+        <div class="card metric"><b id="statProfiles70">—</b><span>Perfiles al 70%+</span></div>
+        <div class="card metric" style="color:var(--warn)"><b id="statExpiringDocs">—</b><span>Documentos por vencer</span></div>
+        <div class="card metric"><b id="statActiveCastings">—</b><span>Convocatorias activas</span></div>
+        <div class="card metric"><b id="statClients">—</b><span>Clientes</span></div>
       </div>
 
       <div class="section-label">Casos recientes</div>
@@ -2266,6 +2267,22 @@ label{font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transf
   </div>
 </div>
 
+<div id="appConfirmOverlay" class="modal-overlay" style="display:none">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-head">
+      <h3 id="appConfirmTitle">Confirmar</h3>
+      <button type="button" class="modal-close" onclick="closeAppConfirm(false)">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="appConfirmMessage" style="font-size:13px; color:var(--text-dim)"></p>
+    </div>
+    <div class="modal-foot" style="gap:10px">
+      <button type="button" class="btn btn-ghost btn-sm" id="appConfirmCancelBtn" onclick="closeAppConfirm(false)" data-i18n="btn_cancelar">Cancelar</button>
+      <button type="button" class="btn btn-sm" id="appConfirmOkBtn" style="background:var(--bad); color:#fff" onclick="closeAppConfirm(true)">Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <div id="docViewerOverlay" class="modal-overlay" style="display:none" onclick="if(event.target===this) closeDocViewer()">
   <div class="modal-box" style="max-width:860px; width:92vw">
     <div class="modal-head">
@@ -2456,6 +2473,7 @@ function activateScreen(name){
   });
   if(name === 'backoffice-cola' && typeof renderBackofficeArtistQueue === 'function') renderBackofficeArtistQueue();
   if(name === 'backoffice-directorio' && typeof renderBackofficeArtistDirectory === 'function') renderBackofficeArtistDirectory();
+  if(name === 'backoffice' && typeof renderBackofficeSummary === 'function') renderBackofficeSummary();
 }
 
 function goToScreen(name){
@@ -3018,7 +3036,7 @@ function confirmDeleteAccount(){
     const logoutBtn = document.getElementById('logoutBtn');
     if(logoutBtn) logoutBtn.style.display = 'none';
   }).catch(err=>{
-    alert(err.message || 'No se pudo eliminar la cuenta.');
+    appAlert(err.message || 'No se pudo eliminar la cuenta.');
   });
 }
 
@@ -3301,6 +3319,28 @@ function openDocViewer(url, title){
 function closeDocViewer(){
   document.getElementById('docViewerOverlay').style.display = 'none';
   document.getElementById('docViewerFrame').src = '';
+}
+
+// Reemplaza confirm()/alert() nativos — dentro del panel de navegador de Claude (y en
+// general, para mantener el look de la app) los diálogos nativos del navegador no son
+// fiables: un confirm() puede auto-rechazarse en silencio sin mostrar nada, haciendo que
+// un botón real parezca "decorativo". Esto usa un modal propio en su lugar.
+let _appConfirmResolve = null;
+function appConfirm(message, title, okOnly){
+  document.getElementById('appConfirmTitle').textContent = title || (okOnly ? curDict().aviso_titulo : curDict().confirmar_titulo);
+  document.getElementById('appConfirmMessage').textContent = message;
+  document.getElementById('appConfirmCancelBtn').style.display = okOnly ? 'none' : '';
+  document.getElementById('appConfirmOverlay').style.display = 'flex';
+  return new Promise(resolve => { _appConfirmResolve = resolve; });
+}
+function appAlert(message, title){
+  return appConfirm(message, title, true);
+}
+function closeAppConfirm(result){
+  document.getElementById('appConfirmOverlay').style.display = 'none';
+  const resolve = _appConfirmResolve;
+  _appConfirmResolve = null;
+  if(resolve) resolve(result);
 }
 function goToLoginWithEmail(){
   goToScreen('acceso');
@@ -3973,7 +4013,7 @@ const I18N = {
     label_habilidades: 'Habilidades', skill_aereos: 'Aéreos', skill_patinaje: 'Patinaje',
     eng_desc_a: 'Básico. Sigue instrucciones simples.', eng_desc_b1: 'Intermedio. Se comunica con el equipo.', eng_desc_b2: 'Conversa con huéspedes y da entrevistas.', eng_desc_c: 'Avanzado. Presenta o hace anuncios.',
     cargar_docs_sub: 'CAS cifra estos datos — el cliente solo ve si están vigentes, nunca el archivo.',
-    status_vigente: 'Vigente', status_vence_pronto: 'Vence pronto', status_no_cargado: 'No cargado', status_cargado: 'Cargado', doc_viewer_title: 'Documento', placeholder_sin_visa: 'Aún no la tengo', label_visa_c1d_venc: 'Visa C1/D — vencimiento',
+    status_vigente: 'Vigente', status_vence_pronto: 'Vence pronto', status_no_cargado: 'No cargado', status_cargado: 'Cargado', doc_viewer_title: 'Documento', aviso_titulo: 'Aviso', confirmar_titulo: 'Confirmar', placeholder_sin_visa: 'Aún no la tengo', label_visa_c1d_venc: 'Visa C1/D — vencimiento',
     cargar_material_sub: 'Headshots, reel y video sin editar. Todo pasa por aprobación de CAS antes de ser visible.',
     tile_foto1: 'Foto 1 · Reemplazar', tile_foto2: 'Foto 2 · Reemplazar', tile_agregar_foto: '+ Agregar foto', tile_reel_editado: '+ Reel editado', tile_video_sin_editar: '+ Video sin editar',
     label_carpeta_material: 'Carpeta de material (opcional)', placeholder_drive: 'Link de Google Drive',
@@ -4142,7 +4182,7 @@ const I18N = {
     label_habilidades: 'Skills', skill_aereos: 'Aerials', skill_patinaje: 'Skating',
     eng_desc_a: 'Basic. Follows simple instructions.', eng_desc_b1: 'Intermediate. Communicates with the team.', eng_desc_b2: 'Converses with guests and gives interviews.', eng_desc_c: 'Advanced. Presents or makes announcements.',
     cargar_docs_sub: 'CAS encrypts this data — the client only sees whether it is valid, never the file.',
-    status_vigente: 'Valid', status_vence_pronto: 'Expiring soon', status_no_cargado: 'Not uploaded', status_cargado: 'Uploaded', doc_viewer_title: 'Document', placeholder_sin_visa: "Don't have it yet", label_visa_c1d_venc: 'Visa C1/D — expiry',
+    status_vigente: 'Valid', status_vence_pronto: 'Expiring soon', status_no_cargado: 'Not uploaded', status_cargado: 'Uploaded', doc_viewer_title: 'Document', aviso_titulo: 'Notice', confirmar_titulo: 'Confirm', placeholder_sin_visa: "Don't have it yet", label_visa_c1d_venc: 'Visa C1/D — expiry',
     cargar_material_sub: 'Upload your best photos and video. Everything goes through CAS approval before being visible.',
     tile_foto1: 'Photo 1 · Replace', tile_foto2: 'Photo 2 · Replace', tile_agregar_foto: '+ Add photo', tile_reel_editado: '+ Edited reel', tile_video_sin_editar: '+ Unedited video',
     label_carpeta_material: 'Material folder (optional)', placeholder_drive: 'Google Drive link',
@@ -4425,6 +4465,25 @@ function saveClientProfile(){
 // Los 8 artistas de muestra y cualquiera que se registre de verdad son ahora filas reales
 // en la base de datos (ver backend/db/seed.js) — no hay más un sistema aparte de datos
 // de muestra: todo pasa por las mismas rutas de la API.
+
+// Tarjetas de Resumen del Backoffice: artistas/perfiles/documentos salen de Postgres de
+// verdad. Clientes y convocatorias activas todavía viven solo como datos de muestra en
+// ADMIN_CLIENT_DATA (esa parte se quedó fuera de esta fase), así que su conteo refleja
+// exactamente lo que hay ahí — ya no son números inventados sueltos.
+function renderBackofficeSummary(){
+  const elTotal = document.getElementById('statTotalArtists');
+  if(!elTotal) return;
+  api.stats().then(({totalArtists, profiles70Plus, expiringDocs})=>{
+    elTotal.textContent = totalArtists;
+    document.getElementById('statProfiles70').textContent = profiles70Plus;
+    document.getElementById('statExpiringDocs').textContent = expiringDocs;
+  });
+  const clients = Object.values(ADMIN_CLIENT_DATA);
+  document.getElementById('statClients').textContent = clients.length;
+  const activeCastings = clients.reduce((n, c) => n + c.convocatorias.filter(x => x.status === 'Activa').length, 0);
+  document.getElementById('statActiveCastings').textContent = activeCastings;
+}
+
 function renderBackofficeArtistQueue(){
   const list = document.getElementById('bocArtistQueueList');
   if(!list) return;
@@ -4450,6 +4509,7 @@ function resolveArtistApplication(btn, id, approve){
   (approve ? api.approve(id) : api.reject(id)).then(()=>{
     resolveRow(btn, approve ? 'Aprobado' : 'Rechazado');
     renderBackofficeArtistDirectory();
+    renderBackofficeSummary();
   });
 }
 
@@ -4493,11 +4553,13 @@ function exitAdminArtistView(){
   goToScreen('backoffice-directorio');
 }
 
-function deleteArtistFromAdmin(){
+async function deleteArtistFromAdmin(){
   const account = window.__currentProfileAccount;
   if(!account) return;
   const dict = curDict();
-  if(!confirm(dict.confirm_eliminar_cuenta.replace('{nombre}', account.firstName + ' ' + (account.lastName || '')).replace('{casId}', account.casId))) return;
+  const msg = dict.confirm_eliminar_cuenta.replace('{nombre}', account.firstName + ' ' + (account.lastName || '')).replace('{casId}', account.casId);
+  const ok = await appConfirm(msg, dict.btn_eliminar_cuenta_admin);
+  if(!ok) return;
   api.deleteArtist(account.id).then(()=>{
     document.getElementById('adminEditArtistBanner').style.display = 'none';
     window.__currentProfileAccount = null;
@@ -4505,9 +4567,10 @@ function deleteArtistFromAdmin(){
     window.__filesContext = null;
     renderBackofficeArtistQueue();
     renderBackofficeArtistDirectory();
+    renderBackofficeSummary();
     goToScreen('backoffice-directorio');
   }).catch(err=>{
-    alert(err.message || 'No se pudo eliminar la cuenta.');
+    appAlert(err.message || 'No se pudo eliminar la cuenta.');
   });
 }
 function exitAdminEdit(){
@@ -4684,6 +4747,7 @@ setLanguage('es');
 activateScreen('inscripcion');
 renderBackofficeArtistQueue();
 renderBackofficeArtistDirectory();
+renderBackofficeSummary();
 
 // Si el navegador ya tenía una sesión activa (cookie), entra directo a Mi Perfil
 // en vez de mostrar Inscripción — así "recuerda" el login entre recargas.

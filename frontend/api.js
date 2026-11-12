@@ -43,6 +43,7 @@ const api = {
   deleteFile: (id) => apiCall('DELETE', '/api/files/' + id),
   fileUrl: (id) => '/api/files/' + id,
 
+  stats: () => apiCall('GET', '/api/backoffice/stats'),
   queue: () => apiCall('GET', '/api/backoffice/queue'),
   approve: (id) => apiCall('POST', '/api/backoffice/applications/' + id + '/approve'),
   reject: (id) => apiCall('POST', '/api/backoffice/applications/' + id + '/reject'),

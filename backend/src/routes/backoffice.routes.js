@@ -58,6 +58,27 @@ router.put('/artists/:id', async (req, res) => {
   res.json({ artist: artistRowToJson(updated) });
 });
 
+// Conteos reales para las tarjetas de Resumen del Backoffice.
+router.get('/stats', async (req, res) => {
+  const result = await pool.query(`
+    SELECT
+      (SELECT COUNT(*) FROM artists) AS total_artists,
+      (SELECT COUNT(*) FROM artists WHERE profile_completion >= 70) AS profiles_70plus,
+      (
+        (SELECT COUNT(*) FROM artists WHERE passport_exp IS NOT NULL AND passport_exp <= CURRENT_DATE + INTERVAL '60 days') +
+        (SELECT COUNT(*) FROM artists WHERE stcw_exp IS NOT NULL AND stcw_exp <= CURRENT_DATE + INTERVAL '60 days') +
+        (SELECT COUNT(*) FROM artists WHERE peme_exp IS NOT NULL AND peme_exp <= CURRENT_DATE + INTERVAL '60 days') +
+        (SELECT COUNT(*) FROM artists WHERE visa_exp IS NOT NULL AND visa_exp <= CURRENT_DATE + INTERVAL '60 days')
+      ) AS expiring_docs
+  `);
+  const row = result.rows[0];
+  res.json({
+    totalArtists: Number(row.total_artists),
+    profiles70Plus: Number(row.profiles_70plus),
+    expiringDocs: Number(row.expiring_docs)
+  });
+});
+
 // Elimina una cuenta por completo (sus archivos se borran en cascada).
 router.delete('/artists/:id', async (req, res) => {
   const result = await pool.query('DELETE FROM artists WHERE id = $1 RETURNING id', [req.params.id]);
