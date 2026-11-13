@@ -452,6 +452,7 @@ label{font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transf
     <button type="button" data-screen="acceso">Acceso</button>
     <button type="button" data-screen="cargar">Cargar/Actualizar</button>
     <button type="button" data-screen="perfil">Mi Perfil</button>
+    <button type="button" data-screen="contratacion">Mis contratos</button>
     <button type="button" data-screen="cliente">Vista Cliente</button>
     <button type="button" data-screen="backoffice">Backoffice</button>
   </div>
@@ -1401,6 +1402,45 @@ label{font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transf
     </div>
   </section>
 
+  <!-- ══════════ SCREEN 2.7 — MIS CONTRATOS ══════════ -->
+  <section class="screen" id="screen-contratacion">
+    <span class="eyebrow">Mis contratos</span>
+    <h2 class="h-title">Tus contrataciones con CAS</h2>
+    <p class="h-sub">Cada contratación nueva trae su onboarding obligatorio de 5 pasos. Al final firmas tu contrato aquí y tu copia queda guardada.</p>
+
+    <div class="banner" id="obPendingBanner" style="margin-top:16px; border-color:rgba(201,168,76,.4); display:none">🆕 Tienes una contratación pendiente de onboarding y firma.</div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="doc-list" id="obContractsList"><p class="hint">Cargando...</p></div>
+    </div>
+
+    <div class="card" id="obWizard" style="display:none; margin-top:18px">
+      <div class="ob-stepper" id="obStepper"></div>
+      <h3 class="name-serif" id="obTitle" style="font-size:20px; margin:0 0 12px">Paso 1</h3>
+      <div class="section-label">Puntos clave</div>
+      <ul class="ob-points" id="obPoints"></ul>
+      <label style="margin-top:14px; display:flex; gap:8px; align-items:center; font-size:13px"><input type="checkbox" id="obConfirm" onchange="obSyncNext()"> <span>Leí y entendí este paso</span></label>
+
+      <div id="obContractBox" style="display:none; margin-top:18px">
+        <div class="section-label">Tu contrato</div>
+        <div class="ob-contract" id="obContractText"></div>
+        <p class="hint" id="obSignLocked" style="margin-top:12px">🔒 La firma se habilita cuando termines el último paso.</p>
+        <div id="obSignArea" style="display:none; margin-top:14px">
+          <div class="field"><label>Nombre completo (como aparece en tu pasaporte)</label><input type="text" id="obSignName" oninput="checkSignReady()" placeholder="Nombre y apellidos"></div>
+          <label style="display:block; font-size:12px; color:var(--text-dim); margin-bottom:6px">Firma aquí</label>
+          <canvas id="obSigPad" class="ob-sig" width="700" height="140"></canvas>
+          <button type="button" class="btn btn-ghost btn-sm" style="margin-top:6px" onclick="clearSig()">Borrar firma</button>
+          <label style="display:flex; gap:8px; align-items:flex-start; margin-top:10px; font-size:12.5px"><input type="checkbox" id="obSignAccept" onchange="checkSignReady()"> <span>Leí el contrato completo y lo acepto. Entiendo que esta firma electrónica tiene la misma validez que mi firma manuscrita.</span></label>
+          <button type="button" class="btn btn-primary" id="obSignBtn" style="margin-top:12px" disabled onclick="signContract()">Firmar contrato</button>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; margin-top:18px">
+        <button type="button" class="btn btn-primary" id="obNext" disabled onclick="obNext()">Siguiente paso →</button>
+      </div>
+    </div>
+  </section>
+
   <!-- ══════════ SCREEN 3 — VISTA CLIENTE: BUSCAR ══════════ -->
   <section class="screen" id="screen-cliente">
     <span class="eyebrow" data-i18n="vista_cliente_eyebrow">Vista cliente</span>
@@ -1698,8 +1738,38 @@ label{font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transf
 
   <!-- ══════════ SCREEN 4 — BACKOFFICE: RESUMEN ══════════ -->
   <section class="screen" id="screen-backoffice">
-    <span class="eyebrow" data-i18n="backoffice_cas">Backoffice CAS</span>
-    <h2 class="h-title" data-i18n="panel_admin_title">Panel de administración</h2>
+    <div id="backofficeLoginGate" style="display:none; max-width:380px; margin:50px auto">
+      <div class="auth-mark" style="margin:0 auto 18px">CAS</div>
+      <div class="card" style="text-align:center">
+        <h3 class="name-serif" style="font-size:22px; margin-bottom:8px">Acceso del equipo CAS</h3>
+        <p class="hint" style="margin-bottom:20px">Inicia sesión con tu cuenta de staff para entrar al Backoffice.</p>
+        <div class="field" style="text-align:left">
+          <label>Correo</label>
+          <input type="text" id="staffEmail" placeholder="tu@casglobalproductions.com">
+        </div>
+        <div class="field" style="text-align:left">
+          <label>Contraseña</label>
+          <div class="pw-field">
+            <input type="password" id="staffPassword">
+            <button type="button" class="pw-toggle" onclick="togglePasswordVisibility(this)">👁</button>
+          </div>
+        </div>
+        <p class="hint" id="staffLoginError" style="display:none; color:var(--bad)"></p>
+        <button type="button" class="btn btn-primary w-full" style="margin-top:8px" onclick="handleStaffLogin()">Entrar</button>
+      </div>
+    </div>
+
+    <div id="backofficeContent" style="display:none">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap">
+      <div>
+        <span class="eyebrow" data-i18n="backoffice_cas">Backoffice CAS</span>
+        <h2 class="h-title" data-i18n="panel_admin_title">Panel de administración</h2>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px">
+        <span class="hint" id="staffWhoAmI" style="margin:0"></span>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="handleStaffLogout()">Cerrar sesión</button>
+      </div>
+    </div>
     <p class="h-sub" data-i18n="panel_admin_sub">Todo lo que el equipo de CAS necesita revisar, aprobar y hacer seguimiento.</p>
 
     <div class="form-shell" style="margin-top:20px">
@@ -1792,6 +1862,7 @@ label{font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transf
     </div>
 
       </div>
+    </div>
     </div>
   </section>
 
@@ -2473,7 +2544,8 @@ function activateScreen(name){
   });
   if(name === 'backoffice-cola' && typeof renderBackofficeArtistQueue === 'function') renderBackofficeArtistQueue();
   if(name === 'backoffice-directorio' && typeof renderBackofficeArtistDirectory === 'function') renderBackofficeArtistDirectory();
-  if(name === 'backoffice' && typeof renderBackofficeSummary === 'function') renderBackofficeSummary();
+  if(name === 'backoffice' && typeof checkStaffAuth === 'function') checkStaffAuth();
+  if(name === 'contratacion' && typeof renderContratacion === 'function') renderContratacion();
 }
 
 function goToScreen(name){
@@ -3561,6 +3633,239 @@ function renderPerfilGaleria(account, dict){
   });
 }
 
+// ───────── Mis Contratos: onboarding de 5 pasos + firma ─────────
+// El contenido de los pasos es real (historia y políticas de CAS), tal como lo escribió
+// el equipo. El video obligatorio del prototipo original no se portó aquí — requeriría
+// archivos de video reales que todavía no existen en el backend — así que cada paso se
+// desbloquea con los puntos clave + la casilla de confirmación, no con ver un video.
+const OB_STEPS = [
+  {t:'La historia de CAS', pts:[
+    '2008: Jhoanna Agudelo conoce en Colombia a un grupo de bailarines jóvenes. El talento sobraba; lo que no existía era la estructura para llevarlo al mundo: contratos, documentos, inmigración, logística. Ese vacío es la razón por la que existe CAS.',
+    'CAS significa Colombian All Stars. Se constituyó legalmente en 2013 en Colombia y Estados Unidos, en 2024 en España y en 2025 en China.',
+    'De puente para artistas pasamos a ser una productora: más de 15 producciones originales, cinco continentes, más de 500 artistas y equipos de hasta 120 personas por producción.',
+    'La Fundación Cultural y Deportiva Colombian All Stars y nuestra escuela en Cali formaron artistas en salsa, otros ritmos, inglés y procesos profesionales. La sede física cerró en 2026; la formación sigue.',
+    'Nuestros escenarios: Royal Caribbean (más de una década juntos), MSC a través de BOR Productions, resorts en Maldivas, producciones en China, Macao y más.',
+    'Cuando subes a un escenario con CAS, llevas 18 años de trabajo de mucha gente. Esa es la historia que representas.'
+  ]},
+  {t:'Cómo funciona CAS', pts:[
+    'CAS es quien te contrata y quien responde ante el cliente. El cliente le paga a CAS; CAS te paga el salario que firmaste en tu contrato.',
+    'Todo lo administrativo va por correo electrónico: contratos, pagos, documentos, permisos. El WhatsApp personal es solo para emergencias.',
+    'Línea CAS +1 888-501-5678: escribe MENU y elige tu área — Operaciones (vuelos e itinerarios), Finanzas (pagos), Vestuario, Legal.',
+    'Tus documentos (pasaporte, STCW, PEME, visa) se mantienen vigentes y cargados en esta plataforma. Si algo vence, el sistema te avisa — y tú respondes.',
+    'Tu perfil, tus contratos, tu historial de pagos y tus copias firmadas viven aquí. No hace falta pedirlos por chat.',
+    'Convocatorias: solo ves las que encajan con tu perfil — disciplina, especialidad, inglés igual o mayor al pedido, género si lo piden y documentos vigentes. Si no calificas, la plataforma te dice qué te falta.'
+  ]},
+  {t:'Lo que esperamos de ti', pts:[
+    'El show empieza antes del escenario: llegas puntual a cada llamado, ensayo y reunión.',
+    'Vestuario y props son de la producción. Se cuelgan, se guardan y se devuelven completos. Nunca se dejan tirados en el camerino, el escenario o la cubierta. Un daño o una pérdida se reportan el mismo día.',
+    'Escenografía y mobiliario — mesas, sillas, estructuras — quedan donde la producción indica. Nadie abandona equipo, ni "por un momento".',
+    'Con el cliente hay un solo canal: CAS. Dudas, quejas o solicitudes no se negocian directamente con la naviera o el hotel.',
+    'Nada de contenido de backstage, barco o ensayos en redes sin autorización. Lo que pasa en producción es confidencial.',
+    'Las reglas del cliente a bordo son ley: horarios, áreas de pasajeros, alcohol, uniforme.',
+    'Tu reputación es la de todos: un incidente de un artista afecta la contratación de los siguientes.'
+  ]},
+  {t:'Tu contratación', pts:[
+    'Antes de viajar: Letter of Employment, visa vigente, PEME aprobado y STCW cargados en la plataforma y en el portal del cliente.',
+    'Vuelos: CAS y el cliente te envían el itinerario. No cambies vuelos por tu cuenta. Haz el check-in en línea apenas se abra.',
+    'Lleva la Letter of Employment impresa y en el teléfono. En migración explicas que viajas a unirte al equipo como tripulante (sign-on).',
+    'Si un vuelo se cancela o pierdes una conexión: avisa de inmediato a Operaciones CAS por correo y por la línea CAS, guarda todos los comprobantes y no compres boletos sin autorización.',
+    'En el puerto sigues las instrucciones del agente portuario. Al subir: entrega de documentos, entrenamiento de seguridad y calendario de ensayos.'
+  ]},
+  {t:'Tu contrato', pts:[
+    'Lee tu contrato completo antes de firmar. Si algo no está claro, escribe a Legal por correo antes de firmar, no después.',
+    'Firmas aquí mismo. Tu copia firmada queda guardada en "Mis contratos" y la puedes descargar cuando quieras.'
+  ]}
+];
+
+let obContracts = [];
+let obCurrentContract = null;
+let obStep = 0;
+
+function renderContratacion(){
+  const list = document.getElementById('obContractsList');
+  if(!list) return;
+  api.myContracts().then(({contracts})=>{
+    obContracts = contracts;
+    const dict = curDict();
+    if(!contracts.length){
+      list.innerHTML = '<p class="hint">Aún no tienes contrataciones con CAS.</p>';
+      document.getElementById('obPendingBanner').style.display = 'none';
+      return;
+    }
+    list.innerHTML = contracts.map(c=>{
+      const pending = c.estado === 'pendiente';
+      const st = pending
+        ? '<span class="pill warn">Onboarding '+c.onboardingStep+'/5</span>'
+        : '<span class="pill ok">Firmado '+formatDateEs((c.signedAt||'').slice(0,10))+'</span>';
+      const btn = pending
+        ? '<button type="button" class="btn btn-primary btn-sm" onclick="openOnboarding(\''+c.id+'\')">Hacer onboarding →</button>'
+        : '<button type="button" class="btn btn-outline btn-sm" onclick="downloadContractCopy(\''+c.id+'\')">Descargar copia</button>';
+      return '<div class="doc-row"><div><div class="doc-name">'+c.titulo+'</div><div class="doc-sub">'+[c.rol,c.pago].filter(Boolean).join(' · ')+'</div></div><div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">'+st+btn+'</div></div>';
+    }).join('');
+    document.getElementById('obPendingBanner').style.display = contracts.some(c=>c.estado==='pendiente') ? '' : 'none';
+  }).catch(()=>{ list.innerHTML = '<p class="hint">No se pudieron cargar tus contratos.</p>'; });
+}
+
+function openOnboarding(id){
+  obCurrentContract = obContracts.find(c=>c.id===id);
+  if(!obCurrentContract) return;
+  obStep = Math.min(4, obCurrentContract.onboardingStep);
+  document.getElementById('obWizard').style.display = '';
+  renderObStep();
+  document.getElementById('obWizard').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function renderObStep(){
+  const done = obCurrentContract.onboardingStep;
+  document.getElementById('obStepper').innerHTML = OB_STEPS.map((x,i)=>{
+    const unlocked = i===0 || done >= i;
+    const isDone = done > i;
+    const cls = isDone ? 'done' : (i===obStep ? 'cur' : (unlocked ? '' : 'locked'));
+    return '<button type="button" class="ob-dot '+cls+'" '+(unlocked?'onclick="obGo('+i+')"':'disabled')+'><span>'+(isDone?'✓':(i+1))+'</span><em>'+x.t+'</em></button>';
+  }).join('');
+  const s = OB_STEPS[obStep];
+  document.getElementById('obTitle').textContent = 'Paso '+(obStep+1)+' de 5 — '+s.t;
+  document.getElementById('obPoints').innerHTML = s.pts.map(p=>'<li>'+p+'</li>').join('');
+  const chk = document.getElementById('obConfirm');
+  const stepAlreadyDone = done > obStep;
+  chk.checked = stepAlreadyDone;
+  chk.disabled = stepAlreadyDone;
+  document.getElementById('obContractBox').style.display = obStep===4 ? '' : 'none';
+  document.getElementById('obNext').style.display = obStep<4 ? '' : 'none';
+  obSyncNext();
+  if(obStep===4) renderContractToSign();
+}
+
+function obSyncNext(){
+  const checked = document.getElementById('obConfirm').checked;
+  document.getElementById('obNext').disabled = !checked;
+  // El paso 5 no tiene botón "Siguiente" (es el último) — marcar su casilla debe guardar
+  // el paso de una vez, si no nunca se llega a onboardingStep 5 y la firma queda bloqueada.
+  if(obStep === 4 && checked && obCurrentContract.onboardingStep < 5){
+    api.advanceOnboarding(obCurrentContract.id, 5).then(({contract})=>{
+      obCurrentContract.onboardingStep = contract.onboardingStep;
+      renderObStepperOnly();
+      renderContractToSign();
+      renderContratacion();
+    }).catch(err=>appAlert(err.message || 'No se pudo avanzar el onboarding.'));
+  }
+}
+function renderObStepperOnly(){
+  const done = obCurrentContract.onboardingStep;
+  document.getElementById('obStepper').innerHTML = OB_STEPS.map((x,i)=>{
+    const unlocked = i===0 || done >= i;
+    const isDone = done > i;
+    const cls = isDone ? 'done' : (i===obStep ? 'cur' : (unlocked ? '' : 'locked'));
+    return '<button type="button" class="ob-dot '+cls+'" '+(unlocked?'onclick="obGo('+i+')"':'disabled')+'><span>'+(isDone?'✓':(i+1))+'</span><em>'+x.t+'</em></button>';
+  }).join('');
+}
+
+function obGo(i){
+  const unlocked = i===0 || obCurrentContract.onboardingStep >= i;
+  if(!unlocked) return;
+  obStep = i;
+  renderObStep();
+}
+
+function obNext(){
+  if(!document.getElementById('obConfirm').checked) return;
+  const nextStep = obStep + 1;
+  if(obCurrentContract.onboardingStep >= nextStep){
+    obStep = Math.min(4, obStep + 1);
+    renderObStep();
+    return;
+  }
+  api.advanceOnboarding(obCurrentContract.id, nextStep).then(({contract})=>{
+    obCurrentContract.onboardingStep = contract.onboardingStep;
+    obStep = Math.min(4, obStep + 1);
+    renderObStep();
+    renderContratacion();
+  }).catch(err=>appAlert(err.message || 'No se pudo avanzar el onboarding.'));
+}
+
+function contractText(c){
+  const account = window.__currentProfileAccount;
+  const nombreArtista = account ? (account.firstName + (account.lastName ? ' ' + account.lastName : '')) : 'la Artista';
+  return '<h4>Contrato de prestación de servicios artísticos</h4>'
+    + '<p><b>Partes:</b> CAS — Colombian All Stars ("CAS") y '+nombreArtista+' ("la Artista").</p>'
+    + '<p><b>1. Objeto.</b> La Artista prestará servicios como '+(c.rol || 'artista').toLowerCase()+' en la producción '+c.titulo+', bajo la dirección artística y operativa que CAS y el cliente indiquen.</p>'
+    + '<p><b>2. Vigencia.</b> '+(c.inicio ? formatDateEs(c.inicio) : 'Por confirmar')+(c.fin ? ' → '+formatDateEs(c.fin) : '')+'. Las fechas finales de embarque las confirma CAS por correo.</p>'
+    + '<p><b>3. Remuneración.</b> '+(c.pago || 'Por confirmar')+', pagadera mensualmente por CAS. La Artista no recibe pagos directos del cliente por estos servicios.</p>'
+    + '<p><b>4. Documentos.</b> La Artista mantiene vigentes pasaporte, visa, STCW y PEME durante todo el contrato y los carga en la plataforma CAS.</p>'
+    + '<p><b>5. Conducta y profesionalismo.</b> La Artista cumple las normas del cliente a bordo, la puntualidad en llamados y ensayos, y el cuidado del vestuario, props, escenografía y mobiliario de la producción. Pérdidas o daños se reportan el mismo día.</p>'
+    + '<p><b>6. Canal único.</b> Toda comunicación contractual con el cliente pasa por CAS.</p>'
+    + '<p><b>7. Confidencialidad e imagen.</b> No se publica contenido de producción sin autorización escrita de CAS.</p>'
+    + '<p><b>8. Terminación.</b> El incumplimiento grave de las cláusulas 4 a 7 faculta a CAS para terminar el contrato conforme a la ley aplicable.</p>';
+}
+
+function renderContractToSign(){
+  document.getElementById('obContractText').innerHTML = contractText(obCurrentContract);
+  if(obCurrentContract.estado === 'firmado'){
+    document.getElementById('obSignLocked').style.display = 'none';
+    document.getElementById('obSignArea').style.display = '';
+    document.getElementById('obSignArea').innerHTML = '<div class="banner" style="border-color:rgba(85,196,135,.4)">✓ Contrato firmado el '+formatDateEs((obCurrentContract.signedAt||'').slice(0,10))+'. Tu copia quedó guardada en "Mis contratos".</div>'
+      + '<button type="button" class="btn btn-outline btn-sm" style="margin-top:10px" onclick="downloadContractCopy(\''+obCurrentContract.id+'\')">Descargar mi copia</button>';
+    return;
+  }
+  const ready = obCurrentContract.onboardingStep >= 5;
+  document.getElementById('obSignArea').style.display = ready ? '' : 'none';
+  document.getElementById('obSignLocked').style.display = ready ? 'none' : '';
+  if(ready) initSigPad();
+}
+
+let _sig = {drawn:false};
+function initSigPad(){
+  const cv = document.getElementById('obSigPad');
+  if(!cv || cv._init) return;
+  cv._init = true;
+  const ctx = cv.getContext('2d');
+  ctx.strokeStyle = '#C9A84C'; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
+  let down = false;
+  const pos = e=>{ const r=cv.getBoundingClientRect(); const p=e.touches?e.touches[0]:e; return [(p.clientX-r.left)*cv.width/r.width,(p.clientY-r.top)*cv.height/r.height]; };
+  const start = e=>{ down=true; const [x,y]=pos(e); ctx.beginPath(); ctx.moveTo(x,y); e.preventDefault(); };
+  const move = e=>{ if(!down) return; const [x,y]=pos(e); ctx.lineTo(x,y); ctx.stroke(); _sig.drawn=true; checkSignReady(); e.preventDefault(); };
+  const end = ()=>{ down=false; };
+  cv.addEventListener('mousedown', start); cv.addEventListener('mousemove', move); window.addEventListener('mouseup', end);
+  cv.addEventListener('touchstart', start, {passive:false}); cv.addEventListener('touchmove', move, {passive:false}); cv.addEventListener('touchend', end);
+}
+function clearSig(){
+  const cv = document.getElementById('obSigPad');
+  cv.getContext('2d').clearRect(0,0,cv.width,cv.height);
+  _sig.drawn = false;
+  checkSignReady();
+}
+function checkSignReady(){
+  const name = (document.getElementById('obSignName').value || '').trim();
+  document.getElementById('obSignBtn').disabled = !(name.length>=5 && _sig.drawn && document.getElementById('obSignAccept').checked && obCurrentContract.onboardingStep>=5);
+}
+function signContract(){
+  const name = document.getElementById('obSignName').value.trim();
+  const dataUrl = document.getElementById('obSigPad').toDataURL('image/png');
+  api.signContract(obCurrentContract.id, name, dataUrl).then(({contract})=>{
+    obCurrentContract.estado = contract.estado;
+    obCurrentContract.signedName = contract.signedName;
+    obCurrentContract.signedAt = contract.signedAt;
+    renderContractToSign();
+    renderContratacion();
+  }).catch(err=>appAlert(err.message || 'No se pudo firmar el contrato.'));
+}
+function _download(filename, html){
+  const blob = new Blob([html], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+function downloadContractCopy(id){
+  const c = obContracts.find(x=>x.id===id);
+  if(!c || c.estado!=='firmado') return;
+  const account = window.__currentProfileAccount;
+  const nombre = c.signedName || (account ? account.firstName+(account.lastName?' '+account.lastName:'') : '');
+  const sig = '<img src="'+api.mySignatureUrl(c.id)+'" style="height:70px;background:#111;border-radius:6px">';
+  _download('Contrato - '+nombre+'.html', '<!doctype html><meta charset="utf-8"><title>Contrato</title><body style="font-family:Georgia,serif;max-width:720px;margin:40px auto;color:#111">'+contractText(c)+'<hr><p><b>Firmado por:</b> '+nombre+' · '+formatDateEs((c.signedAt||'').slice(0,10))+'</p>'+sig+'</body>');
+}
+
 function syncPasswordToggleLabel(btn){
   const input = btn.previousElementSibling;
   if(!input) return;
@@ -4470,6 +4775,45 @@ function saveClientProfile(){
 // verdad. Clientes y convocatorias activas todavía viven solo como datos de muestra en
 // ADMIN_CLIENT_DATA (esa parte se quedó fuera de esta fase), así que su conteo refleja
 // exactamente lo que hay ahí — ya no son números inventados sueltos.
+// El Backoffice ahora exige una sesión real del equipo de CAS (separada de la de
+// artistas) — antes se entraba libre, sin login, mientras no hubiera datos sensibles.
+function checkStaffAuth(){
+  api.staffMe().then(({staff})=>{
+    window.__staffUser = staff;
+    document.getElementById('backofficeLoginGate').style.display = 'none';
+    document.getElementById('backofficeContent').style.display = '';
+    document.getElementById('staffWhoAmI').textContent = staff.name + ' (' + staff.email + ')';
+    renderBackofficeSummary();
+    renderBackofficeArtistQueue();
+    renderBackofficeArtistDirectory();
+  }).catch(()=>{
+    window.__staffUser = null;
+    document.getElementById('backofficeContent').style.display = 'none';
+    document.getElementById('backofficeLoginGate').style.display = 'block';
+  });
+}
+function handleStaffLogin(){
+  const email = document.getElementById('staffEmail').value.trim();
+  const password = document.getElementById('staffPassword').value;
+  const err = document.getElementById('staffLoginError');
+  err.style.display = 'none';
+  api.staffLogin(email, password).then(()=>{
+    checkStaffAuth();
+  }).catch(e=>{
+    err.textContent = e.message || 'No se pudo iniciar sesión.';
+    err.style.display = 'block';
+  });
+}
+function handleStaffLogout(){
+  api.staffLogout().then(()=>{
+    window.__staffUser = null;
+    document.getElementById('backofficeContent').style.display = 'none';
+    document.getElementById('backofficeLoginGate').style.display = 'block';
+    document.getElementById('staffEmail').value = '';
+    document.getElementById('staffPassword').value = '';
+  });
+}
+
 function renderBackofficeSummary(){
   const elTotal = document.getElementById('statTotalArtists');
   if(!elTotal) return;
@@ -4745,9 +5089,6 @@ addTalentBlock('rolesBlocksCliente','reqMainRole', null, 'label_rol_buscado');
 initMaterialCategories();
 setLanguage('es');
 activateScreen('inscripcion');
-renderBackofficeArtistQueue();
-renderBackofficeArtistDirectory();
-renderBackofficeSummary();
 
 // Si el navegador ya tenía una sesión activa (cookie), entra directo a Mi Perfil
 // en vez de mostrar Inscripción — así "recuerda" el login entre recargas.

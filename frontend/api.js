@@ -54,6 +54,18 @@ const api = {
 
   demoAccounts: () => apiCall('GET', '/api/auth/demo-accounts'),
 
+  myContracts: () => apiCall('GET', '/api/me/contracts'),
+  advanceOnboarding: (id, step) => apiCall('POST', '/api/me/contracts/' + id + '/onboarding', { step }),
+  signContract: (id, name, signatureDataUrl) => apiCall('POST', '/api/me/contracts/' + id + '/sign', { name, signatureDataUrl }),
+  mySignatureUrl: (id) => '/api/me/contracts/' + id + '/signature',
+
+  staffLogin: (email, password) => apiCall('POST', '/api/staff-auth/login', { email, password }),
+  staffLogout: () => apiCall('POST', '/api/staff-auth/logout'),
+  staffMe: () => apiCall('GET', '/api/staff-auth/me'),
+  listContracts: (artistId) => apiCall('GET', '/api/backoffice/contracts' + (artistId ? ('?artistId=' + encodeURIComponent(artistId)) : '')),
+  createContract: (data) => apiCall('POST', '/api/backoffice/contracts', data),
+  contractSignatureUrl: (id) => '/api/backoffice/contracts/' + id + '/signature',
+
   // Subidas de Inscripción ANTES de tener cuenta — se asocian al registrarse (ver register()).
   async uploadDraftFile(draftToken, category, file) {
     const form = new FormData();

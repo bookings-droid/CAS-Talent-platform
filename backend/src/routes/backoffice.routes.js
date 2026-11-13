@@ -2,8 +2,15 @@ const express = require('express');
 const { pool } = require('../db');
 const { artistRowToJson } = require('../serialize');
 const { updateArtist } = require('./profile.routes');
+const { requireStaffAuth } = require('../auth');
+const { contractRowToJson, serveSignatureForStaff } = require('./contracts.routes');
 
 const router = express.Router();
+
+// Todo lo de Backoffice exige sesión real del equipo de CAS (ver staff-auth.routes.js) —
+// antes esta parte no tenía ningún login, a propósito, mientras no hubiera datos
+// sensibles de verdad detrás.
+router.use(requireStaffAuth);
 
 // Cualquier artista (de muestra o registrado de verdad) que todavía no ha sido aprobado
 // ni rechazado.
@@ -85,5 +92,39 @@ router.delete('/artists/:id', async (req, res) => {
   if (!result.rows[0]) return res.status(404).json({ error: 'No encontrado' });
   res.json({ ok: true });
 });
+
+// Seguimiento de onboarding/firma de todos los contratos (para la pantalla de Contratos
+// del Backoffice) — opcionalmente filtrable por artista.
+router.get('/contracts', async (req, res) => {
+  const artistId = req.query.artistId;
+  const result = await pool.query(
+    artistId
+      ? 'SELECT c.*, a.first_name, a.last_name, a.cas_id FROM contracts c JOIN artists a ON a.id = c.artist_id WHERE c.artist_id = $1 ORDER BY c.created_at DESC'
+      : 'SELECT c.*, a.first_name, a.last_name, a.cas_id FROM contracts c JOIN artists a ON a.id = c.artist_id ORDER BY c.created_at DESC',
+    artistId ? [artistId] : []
+  );
+  res.json({
+    contracts: result.rows.map(row => ({
+      ...contractRowToJson(row),
+      artistName: row.first_name + (row.last_name ? ' ' + row.last_name : ''),
+      casId: row.cas_id
+    }))
+  });
+});
+
+// Crea un contrato nuevo para un artista — lo verá en su pestaña "Mis contratos" y tendrá
+// que completar el onboarding (5 pasos) y firmar antes de quedar "firmado".
+router.post('/contracts', async (req, res) => {
+  const { artistId, titulo, rol, pago, inicio, fin } = req.body || {};
+  if (!artistId || !titulo) return res.status(400).json({ error: 'Falta artista o título' });
+  const result = await pool.query(
+    `INSERT INTO contracts (artist_id, titulo, rol, pago, inicio, fin, created_by)
+     VALUES ($1,$2,$3,$4, NULLIF($5,'')::date, NULLIF($6,'')::date, $7) RETURNING *`,
+    [artistId, titulo, rol || '', pago || '', inicio || '', fin || '', req.staffId]
+  );
+  res.json({ contract: contractRowToJson(result.rows[0]) });
+});
+
+router.get('/contracts/:id/signature', serveSignatureForStaff);
 
 module.exports = router;

@@ -59,6 +59,23 @@ async function insertArtist(client, a) {
   return result.rows[0] ? result.rows[0].id : null;
 }
 
+// La cuenta de staff inicial sale de variables de entorno, nunca de texto plano en el
+// código — este archivo se sube a un repositorio público. Sin STAFF_SEED_EMAIL/PASSWORD
+// configuradas (ver .env.example), simplemente no siembra ninguna cuenta de staff.
+const STAFF = (process.env.STAFF_SEED_EMAIL && process.env.STAFF_SEED_PASSWORD)
+  ? [{ email: process.env.STAFF_SEED_EMAIL, password: process.env.STAFF_SEED_PASSWORD, name: process.env.STAFF_SEED_NAME || 'CAS Global Productions', role: 'admin' }]
+  : [];
+
+async function insertStaff(client, s) {
+  const passwordHash = await bcrypt.hash(s.password, 10);
+  const result = await client.query(
+    `INSERT INTO staff_users (email, password_hash, name, role) VALUES ($1,$2,$3,$4)
+     ON CONFLICT (email) DO NOTHING RETURNING id`,
+    [s.email, passwordHash, s.name, s.role]
+  );
+  return result.rows[0] ? result.rows[0].id : null;
+}
+
 async function insertFile(client, artistId, category, filePath, mimeType) {
   const data = fs.readFileSync(filePath);
   await client.query(
@@ -83,6 +100,23 @@ async function main() {
       if (fs.existsSync(headshotPath)) await insertFile(client, fonsecaId, 'headshot_primer', headshotPath, 'image/png');
       if (fs.existsSync(fotoPath)) await insertFile(client, fonsecaId, 'headshot_cuerpo', fotoPath, 'image/jpeg');
       console.log('Fotos de Fonseca sembradas.');
+    }
+
+    for (const s of STAFF) {
+      const id = await insertStaff(client, s);
+      if (id) console.log(`Staff sembrado: ${s.email}`);
+    }
+
+    if (fonsecaId) {
+      const existingContract = await client.query('SELECT id FROM contracts WHERE artist_id = $1', [fonsecaId]);
+      if (!existingContract.rows.length) {
+        await client.query(
+          `INSERT INTO contracts (artist_id, titulo, rol, pago, inicio, fin)
+           VALUES ($1,$2,$3,$4,$5,$6)`,
+          [fonsecaId, 'Bailarín principal — Royal Caribbean', 'Bailarín principal', 'USD 2,400/mes', '2027-01-15', '2027-07-15']
+        );
+        console.log('Contrato de prueba sembrado para Fonseca.');
+      }
     }
 
     console.log('Semilla completa.');

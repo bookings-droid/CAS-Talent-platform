@@ -9,6 +9,8 @@ const { router: profileRoutes } = require('./routes/profile.routes');
 const filesRoutes = require('./routes/files.routes');
 const backofficeRoutes = require('./routes/backoffice.routes');
 const draftsRoutes = require('./routes/drafts.routes');
+const staffAuthRoutes = require('./routes/staff-auth.routes');
+const { router: contractsRoutes } = require('./routes/contracts.routes');
 
 const app = express();
 
@@ -17,8 +19,10 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use('/api/auth', authRoutes);
+app.use('/api/staff-auth', staffAuthRoutes);
 app.use('/api/me', profileRoutes);
 app.use('/api', filesRoutes);
+app.use('/api', contractsRoutes);
 app.use('/api/backoffice', backofficeRoutes);
 app.use('/api', draftsRoutes);
 

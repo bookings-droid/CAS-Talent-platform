@@ -64,3 +64,36 @@ CREATE TABLE IF NOT EXISTS pending_files (
 );
 
 CREATE INDEX IF NOT EXISTS pending_files_draft_token_idx ON pending_files(draft_token);
+
+-- Cuentas del equipo de CAS que pueden entrar al Backoffice (separado de los artistas).
+CREATE TABLE IF NOT EXISTS staff_users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  name TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'admin',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Contratos asignados a un artista, con su propio flujo de onboarding (5 pasos, cada uno
+-- con un video que hay que ver completo) y firma final.
+CREATE TABLE IF NOT EXISTS contracts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  artist_id UUID NOT NULL REFERENCES artists(id) ON DELETE CASCADE,
+  titulo TEXT NOT NULL,
+  rol TEXT,
+  pago TEXT,
+  inicio DATE,
+  fin DATE,
+  estado TEXT NOT NULL DEFAULT 'pendiente', -- 'pendiente' | 'firmado'
+  onboarding_step INTEGER NOT NULL DEFAULT 0, -- pasos del onboarding ya completados (0-5)
+  signed_name TEXT,
+  signed_at TIMESTAMPTZ,
+  signature_data BYTEA,
+  signature_mime TEXT,
+  created_by UUID REFERENCES staff_users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS contracts_artist_id_idx ON contracts(artist_id);
