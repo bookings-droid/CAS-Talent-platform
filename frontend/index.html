@@ -441,7 +441,11 @@ label{font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transf
     </div>
   </div>
 
-  <div class="role-tabs" role="tablist" aria-label="Tipo de usuario">
+  <!-- El selector de rol era una ayuda de prototipo para probar las 3 vistas a mano.
+       En el producto real el rol lo decide la sesión (qué cuenta inició sesión), no un
+       botón — se deja oculto pero intacto: el código que lo usa (setRole/ROLE_SCREENS)
+       sigue funcionando internamente para la navegación. -->
+  <div class="role-tabs" role="tablist" aria-label="Tipo de usuario" style="display:none">
     <button type="button" class="active" data-role="artista" data-i18n="role_artista">Vista Artista</button>
     <button type="button" data-role="cliente" data-i18n="role_cliente">Vista Cliente</button>
     <button type="button" data-role="administrador" data-i18n="role_administrador">Vista Administrador</button>
@@ -789,6 +793,28 @@ label{font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transf
           <p class="fine" style="text-align:center; margin-top:18px">
             <a href="#" onclick="setAccesoView('recover'); return false;" data-i18n="link_recuperar_cuenta" style="color:var(--text-dim); text-decoration:underline; cursor:pointer">¿Olvidaste cómo entrar? Recupera tu cuenta</a>
           </p>
+          <p class="fine" style="text-align:center; margin-top:8px">
+            <a href="#" onclick="setAccesoView('staff'); return false;" style="color:var(--text-faint); text-decoration:underline; cursor:pointer; font-size:11px">¿Eres del equipo CAS? Accede aquí</a>
+          </p>
+        </div>
+
+        <!-- STAFF VIEW — acceso del equipo administrativo de CAS al Backoffice -->
+        <div id="accesoStaff" style="display:none">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="setAccesoView('landing')">← Volver</button>
+          <h1 style="margin-top:12px">Acceso del equipo CAS</h1>
+          <div class="field">
+            <label>Correo</label>
+            <input type="text" id="accesoStaffEmail" placeholder="tu@casglobalproductions.com">
+          </div>
+          <div class="field">
+            <label>Contraseña</label>
+            <div class="pw-field">
+              <input type="password" id="accesoStaffPassword">
+              <button type="button" class="pw-toggle" onclick="togglePasswordVisibility(this)">👁</button>
+            </div>
+          </div>
+          <p class="hint" id="accesoStaffError" style="display:none; color:var(--bad)"></p>
+          <button type="button" class="btn btn-primary w-full" onclick="handleStaffLoginFromAcceso()">Entrar</button>
         </div>
 
         <!-- LOGIN VIEW -->
@@ -798,7 +824,7 @@ label{font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transf
 
           <div class="field">
             <label for="email" data-i18n="label_email_full">Correo electrónico</label>
-            <input type="email" id="email" placeholder="tu@correo.com" value="mcamila.mafla@example.com">
+            <input type="email" id="email" placeholder="tu@correo.com">
           </div>
           <div class="field" id="passwordWrap">
             <label for="password" data-i18n="password_label">Contraseña</label>
@@ -2535,14 +2561,29 @@ function screenToRole(name){
   if(name === 'backoffice' || name.indexOf('backoffice-') === 0) return 'administrador';
   return 'artista';
 }
+// En el producto real no hay un switch manual de "vista" — lo que se ve arriba depende
+// de qué cuenta inició sesión (o de que nadie lo haya hecho todavía), no de un clic.
+const SESSION_TABS = {
+  anon: ['inscripcion', 'acceso'],
+  artist: ['cargar', 'perfil', 'contratacion'],
+  staff: []
+};
+function updateTabsForSession(){
+  const kind = window.__sessionKind || 'anon';
+  const visible = SESSION_TABS[kind] || [];
+  const tabsBar = document.querySelector('.tabs');
+  if(tabsBar) tabsBar.style.display = visible.length ? '' : 'none';
+  document.querySelectorAll('.tabs button').forEach(b=>{
+    b.style.display = visible.includes(b.dataset.screen) ? '' : 'none';
+  });
+}
+
 function activateScreen(name){
   document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.screen===name));
   document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active', s.id==='screen-'+name));
   const role = screenToRole(name);
   document.querySelectorAll('.role-tabs button').forEach(b=>b.classList.toggle('active', b.dataset.role===role));
-  document.querySelectorAll('.tabs button').forEach(b=>{
-    b.style.display = ROLE_SCREENS[role].includes(b.dataset.screen) ? '' : 'none';
-  });
+  updateTabsForSession();
   if(name === 'backoffice-cola' && typeof renderBackofficeArtistQueue === 'function') renderBackofficeArtistQueue();
   if(name === 'backoffice-directorio' && typeof renderBackofficeArtistDirectory === 'function') renderBackofficeArtistDirectory();
   if(name === 'backoffice' && typeof checkStaffAuth === 'function') checkStaffAuth();
@@ -3441,6 +3482,7 @@ function completeLoginAs(account){
   if(artistBanner) artistBanner.style.display = 'none';
   window.__profileViewIsAdmin = false;
   window.__filesContext = 'me';
+  window.__sessionKind = 'artist';
   renderArtistProfile(account);
   const logoutBtn = document.getElementById('logoutBtn');
   if(logoutBtn) logoutBtn.style.display = '';
@@ -3451,6 +3493,7 @@ function handleLogout(){
   api.logout().then(()=>{
     document.getElementById('logoutBtn').style.display = 'none';
     window.__currentProfileAccount = null;
+    window.__sessionKind = null;
     goToScreen('acceso');
     setAccesoView('landing');
   });
@@ -4627,6 +4670,23 @@ function setAccesoView(view){
   document.getElementById('accesoLogin').style.display = (view === 'login') ? 'block' : 'none';
   document.getElementById('accesoRecover').style.display = (view === 'recover') ? 'block' : 'none';
   document.getElementById('accesoRegisterClient').style.display = (view === 'register' && isClient) ? 'block' : 'none';
+  document.getElementById('accesoStaff').style.display = (view === 'staff') ? 'block' : 'none';
+}
+
+function handleStaffLoginFromAcceso(){
+  const email = document.getElementById('accesoStaffEmail').value.trim();
+  const password = document.getElementById('accesoStaffPassword').value;
+  const errEl = document.getElementById('accesoStaffError');
+  errEl.style.display = 'none';
+  api.staffLogin(email, password).then(()=>{
+    window.__sessionKind = 'staff';
+    document.getElementById('accesoStaffEmail').value = '';
+    document.getElementById('accesoStaffPassword').value = '';
+    goToScreen('backoffice');
+  }).catch(err=>{
+    errEl.textContent = err.message || 'No se pudo iniciar sesión.';
+    errEl.style.display = 'block';
+  });
 }
 
 function submitRecover(){
@@ -4781,6 +4841,8 @@ function saveClientProfile(){
 function checkStaffAuth(){
   api.staffMe().then(({staff})=>{
     window.__staffUser = staff;
+    window.__sessionKind = 'staff';
+    updateTabsForSession();
     document.getElementById('backofficeLoginGate').style.display = 'none';
     document.getElementById('backofficeContent').style.display = '';
     document.getElementById('staffWhoAmI').textContent = staff.name + ' (' + staff.email + ')';
@@ -4789,6 +4851,8 @@ function checkStaffAuth(){
     renderBackofficeArtistDirectory();
   }).catch(()=>{
     window.__staffUser = null;
+    if(window.__sessionKind === 'staff') window.__sessionKind = null;
+    updateTabsForSession();
     document.getElementById('backofficeContent').style.display = 'none';
     document.getElementById('backofficeLoginGate').style.display = 'block';
   });
@@ -4808,10 +4872,13 @@ function handleStaffLogin(){
 function handleStaffLogout(){
   api.staffLogout().then(()=>{
     window.__staffUser = null;
+    window.__sessionKind = null;
     document.getElementById('backofficeContent').style.display = 'none';
     document.getElementById('backofficeLoginGate').style.display = 'block';
     document.getElementById('staffEmail').value = '';
     document.getElementById('staffPassword').value = '';
+    goToScreen('acceso');
+    setAccesoView('landing');
   });
 }
 
@@ -5127,11 +5194,18 @@ addTalentBlock();
 addTalentBlock('rolesBlocksCliente','reqMainRole', null, 'label_rol_buscado');
 initMaterialCategories();
 setLanguage('es');
-activateScreen('inscripcion');
+// Acceso es la puerta de entrada real de la app — Inscripción (registrarse) se llega
+// desde ahí con el botón "Regístrate", no como una pestaña aparte visible siempre.
+activateScreen('acceso');
 
-// Si el navegador ya tenía una sesión activa (cookie), entra directo a Mi Perfil
-// en vez de mostrar Inscripción — así "recuerda" el login entre recargas.
-api.me().then(({artist})=>{ completeLoginAs(artist); }).catch(()=>{});
+// Si el navegador ya tenía una sesión activa (cookie), entra directo a su pantalla —
+// Mi Perfil si es artista, el Backoffice si es del equipo CAS — en vez de mostrar Acceso.
+api.me().then(({artist})=>{ completeLoginAs(artist); }).catch(()=>{
+  api.staffMe().then(()=>{
+    window.__sessionKind = 'staff';
+    goToScreen('backoffice');
+  }).catch(()=>{});
+});
 
 function resolveRow(btn, result){
   const row = btn.closest('.queue-row');
