@@ -43,7 +43,7 @@ router.post('/applications/:id/reject', async (req, res) => {
 router.get('/directory', async (req, res) => {
   const q = (req.query.q || '').toLowerCase();
   const result = await pool.query(
-    `SELECT * FROM artists WHERE verified = true AND (
+    `SELECT * FROM artists WHERE verified = true AND banned = false AND (
        $1 = '' OR lower(first_name || ' ' || coalesce(last_name,'')) LIKE '%' || $1 || '%'
        OR lower(cas_id) LIKE '%' || $1 || '%' OR lower(coalesce(discipline,'')) LIKE '%' || $1 || '%'
      ) ORDER BY first_name`,
@@ -91,6 +91,27 @@ router.delete('/artists/:id', async (req, res) => {
   const result = await pool.query('DELETE FROM artists WHERE id = $1 RETURNING id', [req.params.id]);
   if (!result.rows[0]) return res.status(404).json({ error: 'No encontrado' });
   res.json({ ok: true });
+});
+
+// Suspende una cuenta sin borrarla: no puede iniciar sesión, pero su historial (contratos,
+// documentos) queda intacto por si se reactiva después.
+router.post('/artists/:id/ban', async (req, res) => {
+  const { reason } = req.body || {};
+  const result = await pool.query(
+    `UPDATE artists SET banned = true, banned_at = now(), banned_reason = $1, updated_at = now() WHERE id = $2 RETURNING *`,
+    [reason || '', req.params.id]
+  );
+  if (!result.rows[0]) return res.status(404).json({ error: 'No encontrado' });
+  res.json({ artist: artistRowToJson(result.rows[0]) });
+});
+
+router.post('/artists/:id/unban', async (req, res) => {
+  const result = await pool.query(
+    `UPDATE artists SET banned = false, banned_at = NULL, banned_reason = NULL, updated_at = now() WHERE id = $1 RETURNING *`,
+    [req.params.id]
+  );
+  if (!result.rows[0]) return res.status(404).json({ error: 'No encontrado' });
+  res.json({ artist: artistRowToJson(result.rows[0]) });
 });
 
 // Seguimiento de onboarding/firma de todos los contratos (para la pantalla de Contratos

@@ -1244,6 +1244,7 @@ label{font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transf
         <span style="font-size:12px; color:var(--text-dim)"><span data-i18n="admin_mode_desc_pre">Estás viendo y editando el perfil de</span> <b id="adminEditArtistId" style="color:var(--gold-light)">—</b> <span data-i18n="admin_mode_desc_post">como parte del equipo de CAS. Los cambios se guardan directamente en su cuenta.</span></span>
       </div>
       <div style="display:flex; gap:8px; flex-wrap:wrap">
+        <button type="button" class="btn btn-outline btn-sm" id="banArtistBtn" style="border-color:var(--warn); color:var(--warn)" onclick="toggleBanArtistFromAdmin()">⛔ Banear cuenta</button>
         <button type="button" class="btn btn-outline btn-sm" data-i18n="btn_eliminar_cuenta_admin" style="border-color:var(--bad); color:var(--bad)" onclick="deleteArtistFromAdmin()">🗑 Eliminar cuenta</button>
         <button type="button" class="btn btn-outline btn-sm" data-i18n="btn_back_directory" onclick="exitAdminArtistView()">← Volver al directorio</button>
       </div>
@@ -4886,10 +4887,48 @@ function openAdminArtistProfileReal(id){
     renderArtistProfile(artist);
     document.getElementById('adminEditArtistId').textContent = artist.casId;
     document.getElementById('adminEditArtistBanner').style.display = 'flex';
+    updateBanButtonLabel(artist);
     const logoutBtn = document.getElementById('logoutBtn');
     if(logoutBtn) logoutBtn.style.display = 'none';
     goToScreen('perfil');
   });
+}
+
+function updateBanButtonLabel(artist){
+  const btn = document.getElementById('banArtistBtn');
+  if(!btn) return;
+  if(artist.banned){
+    btn.textContent = '✓ Reactivar cuenta';
+    btn.style.borderColor = 'var(--ok)';
+    btn.style.color = 'var(--ok)';
+  } else {
+    btn.textContent = '⛔ Banear cuenta';
+    btn.style.borderColor = 'var(--warn)';
+    btn.style.color = 'var(--warn)';
+  }
+}
+
+async function toggleBanArtistFromAdmin(){
+  const account = window.__currentProfileAccount;
+  if(!account) return;
+  if(account.banned){
+    const ok = await appConfirm('Esto le devuelve el acceso a '+account.firstName+' '+(account.lastName||'')+'. ¿Continuar?', 'Reactivar cuenta');
+    if(!ok) return;
+    api.unbanArtist(account.id).then(({artist})=>{
+      window.__currentProfileAccount = artist;
+      updateBanButtonLabel(artist);
+      renderArtistProfile(artist);
+    }).catch(err=>appAlert(err.message || 'No se pudo reactivar la cuenta.'));
+  } else {
+    const ok = await appConfirm('Esto le bloquea a '+account.firstName+' '+(account.lastName||'')+' el inicio de sesión. Su perfil y archivos no se borran, y puedes reactivarla cuando quieras. ¿Continuar?', 'Banear cuenta');
+    if(!ok) return;
+    api.banArtist(account.id).then(({artist})=>{
+      window.__currentProfileAccount = artist;
+      updateBanButtonLabel(artist);
+      renderArtistProfile(artist);
+      renderBackofficeArtistDirectory();
+    }).catch(err=>appAlert(err.message || 'No se pudo banear la cuenta.'));
+  }
 }
 
 function exitAdminArtistView(){

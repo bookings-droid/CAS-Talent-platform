@@ -93,6 +93,7 @@ router.post('/login', async (req, res) => {
 
   const ok = await verifyPassword(password, artist.password_hash);
   if (!ok) return res.status(401).json({ error: 'Correo o contraseña incorrectos.' });
+  if (artist.banned) return res.status(403).json({ error: 'Esta cuenta fue suspendida. Contacta a CAS si crees que es un error.' });
 
   setSessionCookie(res, artist.id);
   res.json({ artist: artistRowToJson(artist) });
@@ -107,6 +108,7 @@ router.post('/oauth-login', async (req, res) => {
   const result = await pool.query('SELECT * FROM artists WHERE lower(email) = lower($1) AND is_demo = true', [email]);
   const artist = result.rows[0];
   if (!artist) return res.status(401).json({ error: 'Cuenta no disponible para este acceso simulado.' });
+  if (artist.banned) return res.status(403).json({ error: 'Esta cuenta fue suspendida.' });
   setSessionCookie(res, artist.id);
   res.json({ artist: artistRowToJson(artist) });
 });
@@ -121,6 +123,10 @@ router.get('/me', async (req, res) => {
   if (!artistId) return res.status(401).json({ error: 'No autenticado' });
   const result = await pool.query('SELECT * FROM artists WHERE id = $1', [artistId]);
   if (!result.rows[0]) return res.status(401).json({ error: 'No autenticado' });
+  if (result.rows[0].banned) {
+    clearSessionCookie(res);
+    return res.status(403).json({ error: 'Esta cuenta fue suspendida.' });
+  }
   res.json({ artist: artistRowToJson(result.rows[0]) });
 });
 

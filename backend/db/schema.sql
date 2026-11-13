@@ -97,3 +97,10 @@ CREATE TABLE IF NOT EXISTS contracts (
 );
 
 CREATE INDEX IF NOT EXISTS contracts_artist_id_idx ON contracts(artist_id);
+
+-- Suspender una cuenta sin borrarla (distinto de eliminar: queda el historial, pero no
+-- puede iniciar sesión). ADD COLUMN IF NOT EXISTS porque `artists` ya existía antes de
+-- esto en las bases de datos ya desplegadas — CREATE TABLE IF NOT EXISTS no las alcanza.
+ALTER TABLE artists ADD COLUMN IF NOT EXISTS banned BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE artists ADD COLUMN IF NOT EXISTS banned_at TIMESTAMPTZ;
+ALTER TABLE artists ADD COLUMN IF NOT EXISTS banned_reason TEXT;
