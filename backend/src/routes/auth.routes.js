@@ -87,7 +87,12 @@ router.post('/login', async (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) return res.status(400).json({ error: 'Correo y contraseña requeridos' });
 
-  const result = await pool.query('SELECT * FROM artists WHERE lower(email) = lower($1)', [email]);
+  // Acepta tanto el correo como el CAS ID (p. ej. M93-22229) en el mismo campo — a la
+  // gente le suele costar menos recordar su CAS ID que el correo con el que se inscribió.
+  const result = await pool.query(
+    'SELECT * FROM artists WHERE lower(email) = lower($1) OR lower(cas_id) = lower($1)',
+    [email]
+  );
   const artist = result.rows[0];
   if (!artist) return res.status(401).json({ error: 'Correo o contraseña incorrectos.' });
 

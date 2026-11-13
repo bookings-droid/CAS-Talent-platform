@@ -18,6 +18,17 @@ const ARTISTS = [
   { casId: 'M04-60173', email: 'carlos.garcia@example.com', password: 'CasDemo123', firstName: 'Carlos Adolfo', lastName: 'Garcia Vivas', gender: 'Male', birthDate: '2004-01-09', nacionalidadValue: 'Colombia', discipline: 'Actuación', mainSkillValue: 'Actor / Actress', aniosExp: '2', nivelIngles: 'A1–A2', nivelInglesId: 'ei1', estaturaValor: '175', estaturaUnidad: 'cm', pais: 'Colombia', paisValue: 'Colombia', ciudad: 'Cali', instagram: '@carlos.garciav', profileCompletion: 40, isDemo: true, verified: true }
 ];
 
+// Cuenta de prueba fija y predecible para seguir probando el lado de artista sin
+// depender de las cuentas de muestra ni de Fonseca.
+const TEST_ARTIST = {
+  casId: 'F95-00001', email: 'prueba@casglobalproductions.com', password: 'Prueba2026',
+  firstName: 'Artista', lastName: 'De Prueba', gender: 'Female',
+  birthDate: '1995-05-15', nacionalidadValue: 'Colombia',
+  discipline: 'Prueba', mainSkillValue: 'Dancer',
+  pais: 'Colombia', paisValue: 'Colombia', ciudad: 'Bogotá',
+  profileCompletion: 50, isDemo: false, verified: true
+};
+
 const FONSECA = {
   casId: 'M93-22229', email: 'cristianfonseca04@gmail.com', password: 'CasFonseca2026',
   firstName: 'Cristian', lastName: 'Fonseca Perdomo', gender: 'Male',
@@ -91,6 +102,9 @@ async function main() {
       const id = await insertArtist(client, a);
       if (id) console.log(`Sembrado: ${a.casId} — ${a.firstName}`);
     }
+
+    const testArtistId = await insertArtist(client, TEST_ARTIST);
+    if (testArtistId) console.log(`Sembrado: ${TEST_ARTIST.casId} — ${TEST_ARTIST.firstName}`);
 
     const fonsecaId = await insertArtist(client, FONSECA);
     if (fonsecaId) {
