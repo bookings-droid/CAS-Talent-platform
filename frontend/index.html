@@ -325,6 +325,13 @@ label{font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transf
 .info-tip-bubble{display:none; position:absolute; top:22px; left:0; z-index:20; width:230px; background:var(--card-raised); border:1px solid var(--line); border-radius:8px; padding:10px 12px; font-size:11.5px; color:var(--text-dim); line-height:1.55; box-shadow:0 8px 24px rgba(0,0,0,.45)}
 .info-tip-wrap:hover .info-tip-bubble, .info-tip-wrap.open .info-tip-bubble{display:block}
 .material-cat{margin-bottom:22px}
+.material-row{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; align-items:start; margin-bottom:6px}
+.material-row .material-cat{margin-bottom:0; min-width:0}
+.material-row .upload-grid{grid-template-columns:1fr !important; gap:8px}
+.material-row .upload-tile{aspect-ratio:4/5}
+.material-row .fs-label{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.app.is-mobile .material-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:720px){.material-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .modal-overlay{position:fixed; inset:0; z-index:200; background:rgba(0,0,0,.6); backdrop-filter:blur(2px); display:flex; align-items:center; justify-content:center; padding:20px}
 .modal-box{width:100%; max-width:480px; max-height:84vh; display:flex; flex-direction:column; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:0 20px 60px rgba(0,0,0,.5)}
@@ -637,9 +644,10 @@ label{font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transf
 
       <label class="fs-label" data-i18n="label_sube_pdf_doc">Sube un PDF del documento</label>
       <p class="hint" data-i18n="hint_solo_pdf" style="margin-bottom:12px">Solo aceptamos archivos en formato PDF.</p>
-      <div class="upload-grid" style="grid-template-columns:repeat(2,1fr); margin-bottom:8px">
+      <div class="upload-grid" style="grid-template-columns:repeat(3,1fr); margin-bottom:8px">
         <div class="upload-tile empty" id="docTile-passport" onclick="document.getElementById('docFile-passport').click()">📄 <span data-i18n="tile_pasaporte">Pasaporte</span></div>
         <div class="upload-tile empty" id="docTile-stcw" onclick="document.getElementById('docFile-stcw').click()">📄 STCW</div>
+        <div class="upload-tile empty" id="docTile-peme" onclick="document.getElementById('pemeFileInput').click()">🩺 <span data-i18n="tile_medicos">Médicos (PEME)</span></div>
       </div>
       <input type="file" id="docFile-passport" accept=".pdf,application/pdf" style="display:none" onchange="handleDocUpload(this,'passport')">
       <input type="file" id="docFile-stcw" accept=".pdf,application/pdf" style="display:none" onchange="handleDocUpload(this,'stcw')">
@@ -654,7 +662,6 @@ label{font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transf
       <label class="fs-label" style="margin-top:22px" data-i18n="label_peme_section">Examen médico (PEME)</label>
       <div id="pemeFileList" style="margin-bottom:8px"></div>
       <input type="file" id="pemeFileInput" accept=".pdf,application/pdf" style="display:none" onchange="addPemeFile(this)">
-      <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('pemeFileInput').click()" data-i18n="btn_subir_peme">+ Subir PEME (PDF)</button>
       <div class="field" style="margin-top:12px; max-width:280px"><label data-i18n="label_peme_venc">Examen médico (PEME) — vencimiento</label><input type="date" id="peme_exp"></div>
 
       <label class="fs-label" style="margin-top:22px" data-i18n="label_tiene_visa">¿Tiene visa?</label>
@@ -690,6 +697,7 @@ label{font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transf
     <div class="card form-section" id="sec-i-material">
       <div class="fs-head"><span class="fs-num">04</span><div><div class="fs-title" data-i18n="nav4">Material</div><div class="fs-sub" data-i18n="sec4_sub">Sube tus mejores fotos y videos. Todo pasa por aprobación antes de ser visible.</div></div></div>
 
+      <div class="material-row">
       <div class="material-cat" data-cat="headshot_primer">
         <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px">
           <label class="fs-label" style="margin:0" data-i18n="cat_headshot_primer">Primer plano</label>
@@ -750,6 +758,7 @@ label{font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transf
         <div class="upload-grid" id="tiles-ingles" style="grid-template-columns:repeat(4,1fr)"></div>
         <input type="file" id="catInput-ingles" accept="video/*" style="display:none" onchange="handleCategoryUpload(this,'ingles')">
         <p class="hint" id="nudityWarning-ingles" style="display:none; color:var(--bad); margin-top:4px"></p>
+      </div>
       </div>
     </div>
 
@@ -1118,9 +1127,10 @@ label{font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transf
 
       <label class="fs-label" data-i18n="label_sube_pdf_doc">Sube un PDF del documento</label>
       <p class="hint" data-i18n="hint_solo_pdf" style="margin-bottom:12px">Solo aceptamos archivos en formato PDF.</p>
-      <div class="upload-grid" style="grid-template-columns:repeat(2,1fr); margin-bottom:8px">
+      <div class="upload-grid" style="grid-template-columns:repeat(3,1fr); margin-bottom:8px">
         <div class="upload-tile empty" id="docTile-passportC" onclick="document.getElementById('docFile-passportC').click()">📄 <span data-i18n="tile_pasaporte">Pasaporte</span></div>
         <div class="upload-tile empty" id="docTile-stcwC" onclick="document.getElementById('docFile-stcwC').click()">📄 STCW</div>
+        <div class="upload-tile empty" id="docTile-pemeC" onclick="document.getElementById('pemeFileInputC').click()">🩺 <span data-i18n="tile_medicos">Médicos (PEME)</span></div>
       </div>
       <input type="file" id="docFile-passportC" accept=".pdf,application/pdf" style="display:none" onchange="handleDocUpload(this,'passport','C')">
       <input type="file" id="docFile-stcwC" accept=".pdf,application/pdf" style="display:none" onchange="handleDocUpload(this,'stcw','C')">
@@ -1135,7 +1145,6 @@ label{font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transf
       <label class="fs-label" style="margin-top:22px" data-i18n="label_peme_section">Examen médico (PEME)</label>
       <div id="pemeFileListC" style="margin-bottom:8px"></div>
       <input type="file" id="pemeFileInputC" accept=".pdf,application/pdf" style="display:none" onchange="addPemeFile(this,'C')">
-      <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('pemeFileInputC').click()" data-i18n="btn_subir_peme">+ Subir PEME (PDF)</button>
       <div class="field" style="margin-top:12px; max-width:280px"><label data-i18n="label_peme_venc">Examen médico (PEME) — vencimiento</label><input type="date" id="peme_expC"></div>
 
       <label class="fs-label" style="margin-top:22px" data-i18n="label_tiene_visa">¿Tiene visa?</label>
@@ -1171,6 +1180,7 @@ label{font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transf
     <div class="card form-section" id="sec-c-material">
       <div class="fs-head"><span class="fs-num">05</span><div><div class="fs-title" data-i18n="nav4">Material</div><div class="fs-sub" data-i18n="cargar_material_sub">Headshots, reel y video sin editar. Todo pasa por aprobación de CAS antes de ser visible.</div></div></div>
 
+      <div class="material-row">
       <div class="material-cat" data-cat="c_headshot_primer">
         <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px">
           <label class="fs-label" style="margin:0" data-i18n="cat_headshot_primer">Primer plano</label>
@@ -1231,6 +1241,7 @@ label{font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transf
         <div class="upload-grid" id="tiles-c_ingles" style="grid-template-columns:repeat(4,1fr)"></div>
         <input type="file" id="catInput-c_ingles" accept="video/*" style="display:none" onchange="handleCategoryUpload(this,'c_ingles')">
         <p class="hint" id="nudityWarning-c_ingles" style="display:none; color:var(--bad); margin-top:4px"></p>
+      </div>
       </div>
 
       <div class="field-grid" style="margin-top:16px">
@@ -4269,7 +4280,7 @@ const I18N = {
     label_nivel_ingles: 'Nivel de inglés',
     eng_basico: 'Básico', eng_autodeclarado: 'Autodeclarado — se confirma con tu video', eng_intermedio_alto: 'Intermedio alto', eng_avanzado: 'Avanzado',
     sec3_sub: 'Tus documentos se cifran y solo el equipo de CAS puede verlos.',
-    label_sube_pdf_doc: 'Sube un PDF del documento', hint_solo_pdf: 'Solo aceptamos archivos en formato PDF.', tile_pasaporte: 'Pasaporte',
+    label_sube_pdf_doc: 'Sube un PDF del documento', hint_solo_pdf: 'Solo aceptamos archivos en formato PDF.', tile_pasaporte: 'Pasaporte', tile_medicos: 'Médicos (PEME)',
     hint_scan_status: '',
     label_num_pasaporte: 'Número de pasaporte', label_venc_pasaporte: 'Vencimiento del pasaporte',
     label_stcw_venc: 'STCW — vencimiento', label_peme_venc: 'Examen médico (PEME) — vencimiento',
@@ -4438,7 +4449,7 @@ const I18N = {
     label_nivel_ingles: 'English level',
     eng_basico: 'Basic', eng_autodeclarado: 'Self-declared — confirmed by your video', eng_intermedio_alto: 'Upper intermediate', eng_avanzado: 'Advanced',
     sec3_sub: "Your documents are encrypted and only the CAS team can see them.",
-    label_sube_pdf_doc: 'Upload a PDF of the document', hint_solo_pdf: 'We only accept files in PDF format.', tile_pasaporte: 'Passport',
+    label_sube_pdf_doc: 'Upload a PDF of the document', hint_solo_pdf: 'We only accept files in PDF format.', tile_pasaporte: 'Passport', tile_medicos: 'Medicals (PEME)',
     hint_scan_status: '',
     label_num_pasaporte: 'Passport number', label_venc_pasaporte: 'Passport expiry',
     label_stcw_venc: 'STCW — expiry', label_peme_venc: 'Medical exam (PEME) — expiry',
